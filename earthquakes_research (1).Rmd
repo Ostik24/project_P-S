@@ -1,0 +1,250 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+## Short description of our project
+
+Team: Sofiia Popeniuk, Sofiia Sampara, Ostap Pavlyshyn
+
+Link to dataset: <https://www.kaggle.com/datasets/patricklford/earthquakes-historical-data-and-live-data?select=earthquake_1995-2023.csv>
+
+This dataset provides historical earthquake data from 1995 to 2022, capturing seismic events worldwide with details on location, magnitude, depth, time, etc. By examining this dataset alongside real-time seismic activity, we can better understand the relationship between plate tectonics, earthquakes, and geological hazards.
+
+Key Variables:
+
+```{r}
+library(readr)
+data <- read_csv("dataset/earthquake_1995-2023.csv")
+head(data)
+```
+
+Short description what every variable mean: • Title is a name given to the earthquake for identification.
+
+• Magnitude measures earthquake size, reflecting potential destruction.
+
+• Date and Time records the timestamp of each earthquake.
+
+• CDI is a maximum reported intensity of the earthquake as recorded by the community.
+
+• MMI is a maximum estimated instrumental intensity, indicating the earthquake's observed effects.
+
+• Alert is a classification of the event's alert level, with values such as “green,” “yellow,” “orange,” and “red,” indicating severity.
+
+• Tsunami indicates whether the event occurred in an oceanic region ("1") or not ("0"), relevant for tsunami risk.
+
+• Significance (sig) a numerical value describing the event's significance, factoring in magnitude, MMI, and reported impacts.
+
+• Net is the data contributor's ID, signifying the network considered the preferred source of information.
+
+• NST (Number of Seismic Stations) is a total number of seismic stations used to calculate the earthquake's location.
+
+• Dmin is a horizontal distance from the epicenter to the nearest seismic station, influencing location accuracy.
+
+• Gap is a largest azimuthal gap between adjacent stations, affecting the reliability of the calculated earthquake position.
+
+• MagType is the algorithm or method used to determine the preferred magnitude.
+
+• Depth below the Earth’s surface where the earthquake begins to rupture, influencing surface damage.
+
+• Latitude/Longitude is a geographical coordinates for locating the earthquake on Earth's surface and analyzing regional trends.
+
+• Location within the country affected by the earthquake.
+
+• Continent here the affected country is located.
+
+• Country that experienced the earthquake.
+
+## The descriptive analysis of the dataset
+
+1)  Reading the data from the file.
+
+```{r}
+head(data)
+summary(data)
+```
+
+2)  Testing common distributions
+
+```{r}
+library(nortest)
+analyze_variable <- function(var_name, data) {
+  var_data <- data[[var_name]]
+  var_data <- unique(var_data)
+  if (is.character(var_data) || is.factor(var_data) || length(unique(var_data)) < 10) {
+    cat("Categorical Variable:", var_name, "\n")
+    counts <- table(var_data, useNA = "ifany")
+    cat("\n")
+  } else {
+    cat("Numerical Variable:", var_name, "\n")
+    var_data <- na.omit(as.numeric(var_data))
+    if (length(var_data) > 1) {
+      is_discrete <- all(var_data == floor(var_data))
+      
+      normal_test <- ad.test(var_data)$p.value
+      exp_test <- ks.test(var_data, "pexp", rate = 1 / mean(var_data))$p.value
+      unif_test <- ks.test(var_data, "punif", min = min(var_data), max = max(var_data))$p.value
+      chi_square_test <- ks.test(var_data, "pchisq", df = mean(var_data))$p.value
+      
+      closest_dist <- ifelse(normal_test > 0.05, "Normal",
+                             ifelse(exp_test > 0.05, "Exponential",
+                                    ifelse(unif_test > 0.05, "Uniform",
+                                                  ifelse(chi_square_test > 0.05, "Chi-Square", "Unknown"))))
+      
+      cat("  Is Discrete:", is_discrete, "\n")
+      cat("  Normality test p-value:", normal_test, "\n")
+      cat("  Exponential test p-value:", exp_test, "\n")
+      cat("  Uniform test p-value:", unif_test, "\n")
+      cat("  Chi-Square test p-value:", chi_square_test, "\n")
+      cat("  Closest distribution:", closest_dist, "\n\n")
+    } else {
+      cat("  Insufficient data for analysis.\n\n")
+    }
+  }
+}
+
+for (var in colnames(data)) {
+  analyze_variable(var, data)
+}
+```
+
+```{r}
+numeric_vars <- sapply(data, is.numeric)
+numeric_data <- data[, numeric_vars]
+
+num_vars <- sum(numeric_vars)
+rows <- ceiling(sqrt(num_vars))
+cols <- ceiling(num_vars / rows)
+
+par(mfrow = c(rows, cols), mar = c(2, 2, 1, 0.5))
+
+for (var_name in colnames(numeric_data)) {
+  hist(numeric_data[[var_name]], 
+       main = paste("Histogram of", var_name), 
+       xlab = var_name, 
+       col = "skyblue", 
+       border = "white")
+}
+
+par(mfrow = c(1, 1))
+```
+
+3)  How many values of the data are NA?
+
+```{r}
+colSums(is.na(data))
+```
+
+A lot of data in the continent and country column are not defined (what to do with this? maybe, we should not take into account this data)
+
+4)  Prepare data (make date-time column in proper format)
+
+```{r}
+library(lubridate)
+data$date_time <- dmy_hm(data$date_time)
+```
+
+5)  Summary on some data
+
+```{r}
+library(ggplot2)
+print("The summary of the magnitude of the earthquakes")
+summary(data$magnitude)
+print("The summary of the maximum reported intensity for the event")
+summary(data$cdi)
+print("The summary of the maximum estimated instrumental intensity for the event")
+summary(data$mmi)
+```
+
+6)  Interesting distribution
+
+```{r}
+library(ggplot2)
+
+cdi_mmi_diff <- data$cdi - data$mmi
+
+ggplot(data.frame(cdi_mmi_diff), aes(x = cdi_mmi_diff)) +
+  geom_histogram(binwidth = 0.3, fill = "blue", color = "black", alpha = 0.7) +
+  labs(
+    title = "Frequency Distribution of CDI - MMI Differences",
+    x = "Difference (CDI - MMI)",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+table(data$alert)
+table(data$magType)
+```
+
+```{r}
+ggplot(data, aes(x = alert)) + geom_bar(fill = "green") +
+    labs(title = "Alert Level Frequency", x = "Alert Level", y = "Count")
+```
+
+```{r}
+ggplot(data, aes(x = date_time, y = sig)) + geom_line() +
+    labs(title = "Earthquake Significance Over Time", x = "Date", y = "Significance")
+```
+
+```{r}
+library(ggmap)
+library(maps)
+library(mapdata)
+
+world_map <- map_data("world")
+ggplot() + 
+    geom_polygon(data = world_map, aes(x = long, y = lat, group = group), fill = "gray") +
+    geom_point(data = data, aes(x = longitude, y = latitude, color = magnitude), alpha = 0.5) +
+    labs(title = "Earthquake Locations", x = "Longitude", y = "Latitude")
+
+```
+
+# Hypotheses and Descriptions
+
+## Hypothesis 1: Magnitude and Alert Level Correlation
+
+Hypothesis:\
+Earthquakes with higher magnitudes are more likely to trigger higher alert levels.
+
+Description:\
+This hypothesis investigates the relationship between earthquake magnitude and the `alert` levels (e.g., green, yellow, red). It assumes that larger magnitude earthquakes are more severe and therefore are expected to correspond to more urgent alerts. Testing this hypothesis can help determine if the alert system correlates well with the actual magnitude of seismic events.
+
+Statistical Hypotheses:\
+- $H_0$: There is no association between earthquake magnitude and the alert level.\
+- $H_1$: There is an association between earthquake magnitude and the alert level.
+
+------------------------------------------------------------------------
+
+## Hypothesis 2: Significance Score (SIG) and Region
+
+Hypothesis:\
+Earthquakes in more populated or vulnerable areas (e.g., specific continents or countries) have higher significance scores regardless of their magnitude.
+
+Description:\
+The `sig` variable reflects the overall significance of an earthquake, which may account for not only magnitude but also the population density, infrastructure vulnerability, and potential impact in the affected region. This hypothesis seeks to understand whether earthquakes in densely populated regions systematically receive higher significance scores. Exploring this can provide insights into how social and geographic factors contribute to the perceived importance of seismic events.
+
+Statistical Hypotheses:\
+- $H_0$: The mean significance score ($sig$) does not differ across regions (continents or countries).\
+- $H_1$: The mean significance score ($sig$) differs across regions (continents or countries).
+
+------------------------------------------------------------------------
+
+## Hypothesis 3: Geographic Patterns of Magnitude
+
+Hypothesis:\
+Earthquakes in specific continents or regions (e.g., along tectonic plate boundaries) tend to have higher magnitudes than those in other regions.
+
+Description:\
+This hypothesis examines the geographic distribution of earthquake magnitudes, particularly focusing on whether regions associated with tectonic plate boundaries experience stronger earthquakes. By analyzing the `magnitude` variable in conjunction with `continent` and `location`, this hypothesis aims to identify spatial trends in seismic activity. This can provide insights into the global distribution of tectonic forces and their impact on earthquake magnitudes.
+
+Statistical Hypotheses:\
+- $H_0$: The mean earthquake magnitude does not differ across regions (continents or specific locations).\
+- $H_1$: The mean earthquake magnitude differs across regions (continents or specific locations).
+
+------------------------------------------------------------------------
