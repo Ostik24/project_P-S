@@ -384,6 +384,13 @@ The heatmap provides a visual representation of the correlations among "dmin`, "
 
 The statistical hypothesis testing involved a t-test comparing the mean "dmin" values for earthquakes. The null hypothesis stated that the mean distance (`dmin`) does not significantly differ between the two groups, while the alternative hypothesis proposed that reliable earthquakes have smaller distances.
 
+The t-test is a statistical hypothesis test used to determine whether there is a significant difference between the means of one or two groups. It assumes that the data follows a normal distribution and is typically used when the sample size is small. There are three common types of t-tests:
+
+Two-sample t-test compares the means of two independent groups.
+    $t = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}},$
+    where $\bar{x}_1, \bar{x}_2$ are sample means, $s_1^2, s_2^2$ are variances, and $n_1, n_2$ are sample sizes.
+
+
 The t-test results had a p-value of 0.9545, above the typical significance threshold of 0.05. This high p-value indicates a failure to reject the null hypothesis.
 
 
