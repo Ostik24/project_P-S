@@ -205,11 +205,7 @@ This hypothesis examines the geographic distribution of earthquake magnitudes, p
 Statistical Hypotheses:\
 - $H_0$: There is no association between earthquake magnitude category and continent. - $H_1$: There is an association between earthquake magnitude category and continent.
 
-The provided R code assess the presence of missing values in the dataset before and after data filling, specifically for the columns country, magnitude, and continent. The code calculates the number of NA values in these columns before any data filling.
-
-After this, the code proceeds to read in the processed dataset, which has been updated to include filled country, and continent data. Following the data read, the code calculates the number of NA values in the country, magnitude, and continent columns of this updated dataset.
-
-The code of preproccessing is in file fillCountry.py.
+The provided R code output NA values in the dataset before and after data filling for specific columns. The code of preproccessing is in file fillCountry.py.
 
 ```{r}
 library(knitr)
@@ -223,11 +219,11 @@ na_summary <- data.frame(
   NA_Count = c(na_country, na_magnitude, na_continent)
 )
 
-# Display the summary table using kable
+# Display the summary table
 kable(na_summary, caption = "Summary of missing values before filling data")
 
 
-# Read in the dataset with filled countries
+# Read the dataset with filled countries
 data_country <- read_csv("dataset/earthquake_1995-2023-country.csv", show_col_types = FALSE)
 na_country <- sum(is.na(data_country[['country']]))
 na_magnitude <- sum(is.na(data_country[['magnitude']]))
@@ -253,6 +249,7 @@ ggplot() +
 
 ```{r}
 library(ggplot2)
+#combining the same continents with different names
 data_country$continent <- gsub("AF", "Africa", data_country$continent)
 data_country$continent <- gsub("AS", "Asia", data_country$continent)
 data_country$continent <- gsub("EU", "Europe", data_country$continent)
@@ -273,16 +270,17 @@ ggplot(data_country, aes(x = continent, y = magnitude, color = continent)) +
 
 ```
 
-To apply a chi-squared Pearson test effectively, both variables need to be categorical. In this analysis, while the continent column is already categorized, the magnitude column is continuous. We need to transform the continuous variable, magnitude, into a categorical one by creating a new variable called magnitude_category. The categorization logic involves magnitudes below 7.1 are categorized as "Low," those between 7.1 and 7.7 as "Medium," and those above 7.7 as "High." This makes it suitable for the chi-squared test.
+To apply a chi-squared Pearson test, both variables need to be categorical.The continent column is already categorized, but the magnitude column is continuous. We transform magnitude into a new variable called magnitude_category. The categorization logic involves magnitudes below 7.1 are categorized as "Low," those between 7.1 and 7.7 as "Medium," and those above 7.7 as "High." 
 
 ```{r}
+#Fill magnitude_category
 data_country$magnitude_category <- ifelse(
   is.na(data_country$magnitude), "NA",
   ifelse(data_country$magnitude < 7.1, "Low (<7.1)",
          ifelse(data_country$magnitude < 7.7, "Medium (<7.7)", "High (<8.3)"))
 )
 
-# Set the order of magnitude_category
+# The order of magnitude_category
 data_country$magnitude_category <- factor(
   data_country$magnitude_category,
   levels = c("Low (<7.1)", "Medium (<7.7)", "High (<8.3)")
@@ -298,7 +296,7 @@ ggplot(data_country, aes(x = magnitude_category)) +
 
 ```
 
-The code creates a summary of the counts of earthquakes categorized by continent and magnitude_category. This table is essential for conducting a chi-squared test, as it allows us to observe how the frequency of earthquake magnitudes is distributed across different continents.
+The code creates a summary of the counts of earthquakes categorized by continent and magnitude_category. This table is allowing us to observe how the frequency of earthquake magnitudes is distributed across different continents.
 
 ```{r}
 # Create a contingency table for the counts of earthquakes by category and country
@@ -323,7 +321,6 @@ contingency_table_grouped <- table(data_country$continent_grouped, data_country$
 print(contingency_table_grouped)
 #Perform test
 chisq_test_sim <- chisq.test(contingency_table_grouped, simulate.p.value = TRUE)
-
 print(chisq_test_sim)
 
 ```
@@ -364,8 +361,6 @@ ggplot(cor_melt, aes(x = Var1, y = Var2, fill = value)) +
 
 # reliability based on cdi and mmi thresholds
 data$reliability <- ifelse(data$cdi > 5 & data$mmi > 5, 1, 0)
-
-# Check reliability distribution
 table(data$reliability)
 
 # Subset data
@@ -382,7 +377,8 @@ The heatmap provides a visual representation of the correlations among "dmin`, "
 
 The statistical hypothesis testing involved a t-test comparing the mean "dmin" values for earthquakes. The null hypothesis stated that the mean distance (`dmin`) does not significantly differ between the two groups, while the alternative hypothesis proposed that reliable earthquakes have smaller distances.
 
-The t-test results had a p-value of 0.9545, far above the typical significance threshold of 0.05. This high p-value indicates a failure to reject the null hypothesis.
+The t-test results had a p-value of 0.9545, above the typical significance threshold of 0.05. This high p-value indicates a failure to reject the null hypothesis.
+
 
 ## Hypothesis: Relationship Between Magnitude and Impact
 
