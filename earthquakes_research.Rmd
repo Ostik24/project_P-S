@@ -392,6 +392,8 @@ Statistical Hypotheses:\
 $H_0$: There is no significant correlation between earthquake magnitude and impact measures (sig, CDI, MMI).\
 $H_1$: There is a significant positive correlation between earthquake magnitude and impact measures (sig, CDI, MMI).
 
+Test for this hypothesis is described below.
+
 ------------------------------------------------------------------------
 
 ## Hypothesis: Depth and Intensity Relationship
@@ -400,10 +402,147 @@ Hypothesis:\
 Shallower earthquakes (smaller depth) are associated with higher reported intensities (CDI) and instrumental intensities (MMI).
 
 Description:\
-This hypothesis examines whether the depth of an earthquake influences the intensity of its impact. Shallower earthquakes are generally expected to cause more noticeable ground shaking, leading to higher reported intensities, such as those found in the Community Internet Intensity Map (CDI) and Modified Mercalli Intensity (MMI). The hypothesis suggests that the depth of the earthquake has a negative relationship with intensity, meaning that as the depth decreases (the earthquake becomes shallower), the reported intensity (CDI and MMI) increases. By analyzing the relationship between earthquake depth and intensity, this hypothesis aims to understand how depth correlates with the perceived impact of an earthquake.
+This hypothesis examines whether the depth of an earthquake influences the intensity of its impact. Shallower earthquakes are generally expected to cause more noticeable ground shaking, leading to higher reported intensities, such as those found in the maximum reported intensity (CDI) and maximum estimated instrumental intensity (MMI). The hypothesis suggests that the depth of the earthquake has a negative relationship with intensity, meaning that as the depth decreases (the earthquake becomes shallower), the reported intensity (CDI and MMI) increases. By analyzing the relationship between earthquake depth and intensity, this hypothesis aims to understand how depth correlates with the perceived impact of an earthquake.
 
 Statistical Hypotheses:\
 $H_0$: There is no significant correlation between earthquake depth and intensity measures (CDI, MMI). $H_1$: There is a significant negative correlation between earthquake depth and intensity measures (CDI, MMI), with shallower earthquakes resulting in higher intensities.
+
+Firstly, let's check which values are interesting to test. To do this we can create a correlation matrix and check which values are related and in what way. The values in matrix mean: 1 - a strong positive correlation -1 - a strong negative correlation.
+
+```{r}
+library(dplyr)
+library(corrplot)
+#Selecting columns we want to use
+cor_data <- data %>% select(magnitude, depth, sig, cdi, mmi)
+
+#Creating correlation matrix with Pearson  method
+cor_matrix <- cor(cor_data, use = "complete.obs", method = "pearson")
+
+print(cor_matrix)
+
+#Plot the matrix
+corrplot(cor_matrix, method = "color", type = "upper",
+         title = "Correlation Matrix", tl.col = "black")
+```
+
+These are the rules when to use Pearson correlation:
+
+(1) Both variables are continuous.
+(2) The relationship between the variables is linear.
+(3) Data is approximately normally distributed.
+
+But some of our data violates those rules, so we can try another test - Spearman (For monotonic relationships, non-linear but consistent increase/decrease, the data contains outliers and this method is less sensitive to them)
+
+The main idea of this test is similiar to the U-test, that we used previously.
+
+The Spearman correlation coefficient, $r_s$, is calculated using the ranked values of the variables $X$ and $Y$: $r_s = 1 - \frac{6\sum d_i^2}{n(n^2-1)}$, where $d_i = Rank(X_i) - Rank(Y_i)$, $n$ is the number of observations.
+
+```{r}
+# Creating correlation matrix with Spearman method
+cor_matrix_spearman <- cor(cor_data, use = "complete.obs", method = "spearman")
+
+print(cor_matrix_spearman)
+
+#Plot the correlation matrix
+corrplot(cor_matrix_spearman, method = "color", type = "upper",
+         title = "Correlation Matrix", tl.col = "black")
+```
+
+Here we can see that the relation between magnitude and significance is close to 1, meaning this two values have the positive correlation. Also, we can consider the correlation between depth and mmi, since this is the only negative correlation.
+
+```{r}
+# Taking data we want to test
+x <- data$magnitude
+y <- data$sig 
+
+# Fit the data in the linear model
+linear_model <- lm(y ~ x)
+
+# Get some statistics about the model
+summary(linear_model)
+
+# Plot the data
+plot(x, y, 
+     pch = 16,
+     main = "Linear Regression: Magnitude vs. Significance",
+     xlab = "Magnitude",
+     ylab = "Significance")
+
+# Plot the regression line
+abline(linear_model, col = "blue", lwd = 2)
+```
+
+Linear regression assumes a linear relationship between the independent variable x and the dependent variable y. In our case we have magnitude as x and significance as y. The relationship can be expressed as $y = \alpha + \beta x$, where $\alpha$ is an intercept and $\beta$ is a slope. We use a least squared method to estimate these parameters. 
+
+The formula for sum of squared residuals:
+$\sum (y_i - (\alpha + \beta x_i ))^2$
+
+The regression process adjusts $\alpha$ and $\beta$ to minimize this SSR. The formulas for these estimates are:
+
+$\beta = \frac{\sum(x_i−\bar{x})(y_i−\bar{y})}{\sum (x_i−\bar{x})^2}$
+
+$\alpha = \bar{y}− \beta \bar{x}$
+
+Conclusions:
+
+The equation for linear regression becomes: $y = -1601.4 + 352.92x$ R-squared (which is the measure that indicates the proportion of the variance in the dependent variable y (significance) that is explained by the independent variable x (magnitude) in the model). It is calculated like this: $R^2 = 1 - \frac{SS_{residual}}{SS_{total}}$, where $SS_{residual} = \sum(y_i - \hat{y_i})^2$, $SS_{total} = sum(y_i - \bar{y_i})^2$. in our regression this statistic is much less than 0.7 indicating that our model does not provide a good fit.
+
+```{r}
+# Taking data we want to test
+x <- data$depth
+y <- data$mmi
+
+# Fit the data in the linear model
+linear_model <- lm(y ~ x)
+
+# Get some statistics about the model
+summary(linear_model)
+
+# Plot the data
+plot(x, y, 
+     pch = 16,
+     main = "Linear Regression: Depth vs. MMI",
+     xlab = "Depth",
+     ylab = "MMI")
+
+# Plot the regression line
+abline(linear_model, col = "blue", lwd = 2)
+```
+
+For the second hypothesis we also tried to fit the data in the linear regression, but we observed, that the fit is not good enough, so we tried to fit the data in the polynomial regression, since we see, that the plot suggest a bit curved line.
+
+```{r}
+# Get the data needed for test
+x <- data$depth
+y <- data$mmi
+
+#Fitting the data in the polynomial model
+poly_model <- lm(y ~ poly(x, 3))
+
+# Get some statistics on the regression
+summary(poly_model)
+
+# Plot the data
+plot(x, y, 
+     pch = 16, col = "blue",
+     main = "Polynomial Regression: Depth vs. MMI",
+     xlab = "Depth", ylab = "MMI")
+
+# Plot the regression
+x_grid <- seq(min(x), max(x), length.out = 100) 
+y_pred <- predict(poly_model, newdata = data.frame(x = x_grid))
+
+lines(x_grid, y_pred, col = "red", lwd = 2)
+```
+
+This approach is almost the same as the linear regression, but uses linear algebra theory to find the formulas for estimates of parameters.
+
+The form of this regression is:
+$\hat{y_i} = \alpha + \beta_1x_i + \beta_2x_i^2 + \beta_3x_i^3$
+
+To find the estimates for the parameters we also minimize the sum of squared residuals.
+
+Conclusions: The polynomial regression $y = 6.27 - 23.43263x + 1.01327x^2 + 3.68435x^3$ does not fit into our data good enough, because the R-squared value is too small. We can observe, that our data does not form a good fit, which we can predict, but we clearly see some dependence of these two variables.
 
 ------------------------------------------------------------------------
 
@@ -417,6 +556,78 @@ This hypothesis investigates whether earthquakes that occur in oceanic regions a
 
 Statistical Hypotheses:\
 $H_0$: The mean magnitude and significance of earthquakes in oceanic regions are equal to those in non-oceanic regions. $H_1$: The mean magnitude and significance of earthquakes in oceanic regions are greater than those in non-oceanic regions.
+
+```{r}
+#Read the data
+data <- read.csv("dataset/earthquake_1995-2023.csv")
+
+# Select the data with and without tsunami
+oceanic <- data$magnitude[data$tsunami == 1]
+non_oceanic <- data$magnitude[data$tsunami == 0]
+
+# Testing the data on normality
+print(shapiro.test(oceanic))
+print(shapiro.test(non_oceanic))
+
+```
+
+Since our data does not follow a normal distribution, we try to transform the data (in different ways), but it did not change the distribution.
+
+```{r}
+#transforming the data
+log_oceanic <- log(oceanic)
+hist(log_oceanic, main = "Histogram of Transformed Data")
+
+#Testing the data on normality
+shapiro_result <- shapiro.test(log_oceanic)
+print(shapiro_result)
+```
+
+After trying to make some transformation to make our distribution normal we decided to try another test:
+
+Mann-Whitney U Test
+
+Why do we choose this test?
+
+1)  Does not require data to follow a normal distribution.
+
+2)  Compares the median (not the mean) between the two groups.
+
+Restrictions:
+
+The two samples are independent. The measurement scale is ordinal, interval, or ratio. The shapes of the distributions in the two groups are assumed to be similar (but not identical).
+
+Null Hypothesis ($H_0$): The distributions of the two groups are the same (oceanic and non-oceanic earthquakes). Alternative Hypothesis ($H_1$): One group tends to have larger values than the other (e.g., oceanic earthquakes have larger magnitudes)
+
+The Mann-Whitney U test ranks all data points from both groups combined, then compares the ranks between groups. The U-statistic measures how much one group’s ranks differ from the other’s.
+
+How to conduct this type of a test?
+
+(1) We have two independent samples of different sizes ($n_1$ and $n_2$). Then we combine these two samples in one set of values of size $n = n_1 + n_2$.
+(2) Next, we rank the combined data in ascending order, assigning the average rank to tied values. Then, we calculate $R_i$, which are the sum of ranks: $R_i = \text{Sum of ranks for Group i}$. In our case Group 1 is the oceanic earthquakes and 2 - non-oceanic.
+(3) Next, we use these ranks to compute the test statistics ($U_1$ and $U_2$). For this we use formulas: $U_1 = R_1 - \frac{n_1(n_1 + 1))}{2}$ and $U_2 = R_2 - \frac{n_1(n_1 + 1))}{2}$ The test statistic $U = min(U_1, U_2)$.
+(4) Since our samples have large sizes, we approximate the U-statistic by a normal distribution: $Z = \frac{U - \mu_U}{\sigma_U}$, where $\mu_U = \frac{n_1n_2}{2}$ and $\sigma_U = \sqrt{\frac{n_1n_2(n_1 + n_2 + 1)}{12}}$
+(5) Now, we can find the p-value for this test: $p = P(Z \lt U)$, where $Z \sim N(0, 1)$. If our p-value is less then the significance level $\alpha$, then we reject the null hypothesis.
+
+```{r}
+#Test of the first hypothesis
+test_result <- wilcox.test(oceanic, non_oceanic, alternative = "greater")
+
+print(test_result)
+```
+
+Since p-value is greater than 0.05, we DO NOT reject $H_0$ (we can not reject, that the distribution of magnitude of oceanic and non-oceanic earthquakes does not differ).
+
+```{r}
+#Test of the second hypothesis
+test_result <- wilcox.test(oceanic_sig, non_oceanic_sig, alternative = "greater")
+
+print(test_result)
+```
+
+In significance data we see, that p-value is very close to 0.5, but still greater, so we CAN NOT reject the $H_0$ and can claim, that the distribution of significance in earthquakes with tsunami does not differ from the one without it. However, if we took the significance level of 0.1 than we would reject the null hypothesis and claim that the significance of an earthquake is greater on the earthquake with tsunami than without it.
+
+Results: The magnitude of the earthquakes in two groups (the earthquakes with tsunami and without) has same distribution. However, the significance of the earthquake tends to be greater in oceanic earthquakes than non-oceanic ones.
 
 ------------------------------------------------------------------------
 
