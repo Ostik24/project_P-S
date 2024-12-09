@@ -272,6 +272,13 @@ ggplot(data_country, aes(x = continent, y = magnitude, color = continent)) +
 
 To apply a chi-squared Pearson test, both variables need to be categorical.The continent column is already categorized, but the magnitude column is continuous. We transform magnitude into a new variable called magnitude_category. The categorization logic involves magnitudes below 7.1 are categorized as "Low," those between 7.1 and 7.7 as "Medium," and those above 7.7 as "High." 
 
+This allows us to test the hypothesis about the probabilities of the magnitude categories ("High," "Medium," "Low") across different continents. Specifically, we test:
+$H_0: p_i = p_i(\theta)$ vs $H_1: p_i$ are unrestricted(no fixed relationship to θ).
+The test statistic used is:
+$t := \sum_i \frac{(o_i - e_i)^2}{e_i}$, where$o_i = n_i$ are the observed frequencies in each category and $e_i$ are the expected frequencies under $h_0$. Under $H_0$, the statistic T approximately follows a $\chi^2_r$ distribution with r degrees of freedom, which is determined by the data structure.
+
+Now we want to test the hypothesis
+
 ```{r}
 #Fill magnitude_category
 data_country$magnitude_category <- ifelse(
