@@ -1,9 +1,9 @@
 ---
 title: "R Notebook"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ## Short description of our project
@@ -634,6 +634,8 @@ Since p-value is greater than 0.05, we DO NOT reject $H_0$ (we can not reject, t
 
 ```{r}
 #Test of the second hypothesis
+oceanic_sig <- data$sig[data$tsunami == 1]
+non_oceanic_sig <- data$sig[data$tsunami == 0]
 test_result <- wilcox.test(oceanic_sig, non_oceanic_sig, alternative = "greater")
 
 print(test_result)
@@ -657,3 +659,47 @@ We’re building a decision tree classifier to model the relationship between ea
 -   The maximum instrumental intensity ($mmi$) is calculated using magnitude, depth, dmin, and nst, representing the strongest ground shaking recorded, adjusted for earthquake size, depth, and station coverage.
 
 We’re choosing a decision tree classifier because it’s easy to understand and can handle complex relationships between features. The model will create a tree-like structure where conditions on the features split the data into smaller groups, and then it’ll assign an alert level based on these splits. This approach will give us clear insights into how different factors affect the alert level, and it’ll also make it easy to see how the model makes decisions.
+
+```{r}
+library(rpart)
+library(rpart.plot)
+data$alert <- as.factor(data$alert)
+
+set.seed(123)
+sample_index <- sample(1:nrow(data), 0.8 * nrow(data))
+train_data <- data[sample_index, ]
+test_data <- data[-sample_index, ]
+
+# Build the decision tree model
+tree_model <- rpart(alert ~ magnitude + depth + sig + tsunami + mmi, 
+                    data = train_data, 
+                    method = "class")
+
+# Visualize the decision tree
+rpart.plot(tree_model)
+
+# Make predictions
+predictions <- predict(tree_model, test_data, type = "class")
+
+# Confusion matrix and accuracy
+confusion_matrix <- table(test_data$alert, predictions)
+print(confusion_matrix)
+
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
+```
+
+## Explanation
+
+The decision tree classifier achieved an accuracy of 78.05% in predicting earthquake alert levels using features like magnitude, depth, significance (sig), tsunami occurrence, and maximum estimated instrumental intensity (mmi). While the model performs well, some misclassifications, particularly in "orange" and "yellow" levels, highlight areas for improvement. The tree structure shows how features like significance and magnitude influence alert level predictions.
+
+## How Decision Tree Classifiers Work:
+
+A decision tree classifier is an algorithm that predicts classes by splitting data into branches based on feature thresholds.\
+
+1.  **Root Node**: The process begins with a root node representing the entire dataset.\
+2.  **Splitting**: Features are selected to divide data into branches, minimizing classification error.\
+3.  **Stopping Criteria**: Splitting stops when nodes are pure, or a maximum depth is reached.\
+4.  **Prediction**: New data traverses the tree to a leaf node, determining the predicted class.
+
+The model effectively captures relationships between earthquake features and alert levels. While promising, further refinement (e.g., pruning or ensemble methods) can improve performance.
