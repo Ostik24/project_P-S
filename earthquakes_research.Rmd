@@ -269,14 +269,12 @@ ggplot(data_country, aes(x = continent, y = magnitude, color = continent)) +
   scale_color_brewer(palette = "Set1")
 
 ```
-We will use chi-squared Pearson test because it measures the independence between 2 categorical variables, which aligns with the hypothesis that there is no association between earthquake magnitude category and continent ($H_0$) versus the alternative that an association exists ($H_1$). 
 
-The continent column is already categorized, but the magnitude column is continuous. We transform magnitude into a new variable called magnitude_category. The categorization logic involves magnitudes below 7.1 are categorized as "Low," those between 7.1 and 7.7 as "Medium," and those above 7.7 as "High." 
+We will use chi-squared Pearson test because it measures the independence between 2 categorical variables, which aligns with the hypothesis that there is no association between earthquake magnitude category and continent ($H_0$) versus the alternative that an association exists ($H_1$).
 
-This allows us to test the hypothesis about the probabilities of the magnitude categories ("High," "Medium," "Low") across different continents. Specifically, we test:
-$H_0: p_i = p_i(\theta)$ vs $H_1: p_i$ are unrestricted(no fixed relationship to θ).
-The test statistic used is:
-$t := \sum_i \frac{(o_i - e_i)^2}{e_i}$, where$o_i = n_i$ are the observed frequencies in each category and $e_i$ are the expected frequencies under $h_0$. Under $H_0$, the statistic T approximately follows a $\chi^2_r$ distribution with r degrees of freedom, which is determined by the data structure.
+The continent column is already categorized, but the magnitude column is continuous. We transform magnitude into a new variable called magnitude_category. The categorization logic involves magnitudes below 7.1 are categorized as "Low," those between 7.1 and 7.7 as "Medium," and those above 7.7 as "High."
+
+This allows us to test the hypothesis about the probabilities of the magnitude categories ("High," "Medium," "Low") across different continents. Specifically, we test: $H_0: p_i = p_i(\theta)$ vs $H_1: p_i$ are unrestricted(no fixed relationship to θ). The test statistic used is: $t := \sum_i \frac{(o_i - e_i)^2}{e_i}$, where$o_i = n_i$ are the observed frequencies in each category and $e_i$ are the expected frequencies under $h_0$. Under $H_0$, the statistic T approximately follows a $\chi^2_r$ distribution with r degrees of freedom, which is determined by the data structure.
 
 Now we want to test the hypothesis
 
@@ -385,10 +383,8 @@ The heatmap provides a visual representation of the correlations among "dmin`, "
 
 The t-test is a statistical hypothesis test used to determine whether there is a significant difference between the means of one or two groups. It assumes that the data follows a normal distribution and is typically used when the sample size is small. There are three common types of t-tests:
 
-Two-sample t-test compares the means of two independent groups.
-    $t = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}},$
-    where $\bar{x}_1, \bar{x}_2$ are sample means, $s_1^2, s_2^2$ are variances, and $n_1, n_2$ are sample sizes.
-    
+Two-sample t-test compares the means of two independent groups. $t = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}},$ where $\bar{x}_1, \bar{x}_2$ are sample means, $s_1^2, s_2^2$ are variances, and $n_1, n_2$ are sample sizes.
+
 The t-test is chosen in this case because it is specifically designed to compare the means of two groups to determine if the observed difference is statistically significant. In this context, we aim to test whether the mean distance to the nearest seismic station (dmin) differs between earthquakes with reliable versus less reliable intensity measurements (CDI, MMI).
 
 The t-test is appropriate because the two groups being compared are independent, the variable dmin is continuous, and the sample size is small, making the t-test's assumptions about normality and variance particularly suitable. A two-sample t-test is used here, as it compares the means of two distinct groups.
@@ -487,10 +483,9 @@ plot(x, y,
 abline(linear_model, col = "blue", lwd = 2)
 ```
 
-Linear regression assumes a linear relationship between the independent variable x and the dependent variable y. In our case we have magnitude as x and significance as y. The relationship can be expressed as $y = \alpha + \beta x$, where $\alpha$ is an intercept and $\beta$ is a slope. We use a least squared method to estimate these parameters. 
+Linear regression assumes a linear relationship between the independent variable x and the dependent variable y. In our case we have magnitude as x and significance as y. The relationship can be expressed as $y = \alpha + \beta x$, where $\alpha$ is an intercept and $\beta$ is a slope. We use a least squared method to estimate these parameters.
 
-The formula for sum of squared residuals:
-$\sum (y_i - (\alpha + \beta x_i ))^2$
+The formula for sum of squared residuals: $\sum (y_i - (\alpha + \beta x_i ))^2$
 
 The regression process adjusts $\alpha$ and $\beta$ to minimize this SSR. The formulas for these estimates are:
 
@@ -552,8 +547,7 @@ lines(x_grid, y_pred, col = "red", lwd = 2)
 
 This approach is almost the same as the linear regression, but uses linear algebra theory to find the formulas for estimates of parameters.
 
-The form of this regression is:
-$\hat{y_i} = \alpha + \beta_1x_i + \beta_2x_i^2 + \beta_3x_i^3$
+The form of this regression is: $\hat{y_i} = \alpha + \beta_1x_i + \beta_2x_i^2 + \beta_3x_i^3$
 
 To find the estimates for the parameters we also minimize the sum of squared residuals.
 
@@ -692,15 +686,30 @@ print(paste("Accuracy:", round(accuracy * 100, 2), "%"))
 
 ## Explanation
 
-The decision tree classifier achieved an accuracy of 78.05% in predicting earthquake alert levels using features like magnitude, depth, significance (sig), tsunami occurrence, and maximum estimated instrumental intensity (mmi). While the model performs well, some misclassifications, particularly in "orange" and "yellow" levels, highlight areas for improvement. The tree structure shows how features like significance and magnitude influence alert level predictions.
+The decision tree classifier achieved an accuracy of 86.5 % in predicting earthquake alert levels using features like magnitude, depth, significance (sig), tsunami occurrence, and maximum estimated instrumental intensity (mmi) and shows how those features influence alert level predictions. While the model performs well, some misclassifications, particularly in "orange" and "yellow" levels, highlight areas for improvement.
 
 ## How Decision Tree Classifiers Work:
 
-A decision tree classifier is an algorithm that predicts classes by splitting data into branches based on feature thresholds.\
+A decision tree classifier is an algorithm that predicts classes by splitting data into branches based on feature thresholds and is used to make decisions or predictions. Each internal node corresponds to a test on an attribute, each branch corresponds to the result of the test, and each leaf node corresponds to a class label or a continuous value. It selects the best attribute using a metric like **Gini impurity**, **entropy**, or **information gain**, the best attribute to split the data is selected. Then it splits the given dataset into subsets based on the selected attribute. We repeat the process recursively for each subset, creating a new internal node or leaf node until a stopping criterion is met (it can be that all instances in a node belong to the same class or a predefined depth is reached).\
 
-1.  **Root Node**: The process begins with a root node representing the entire dataset.\
-2.  **Splitting**: Features are selected to divide data into branches, minimizing classification error.\
-3.  **Stopping Criteria**: Splitting stops when nodes are pure, or a maximum depth is reached.\
-4.  **Prediction**: New data traverses the tree to a leaf node, determining the predicted class.
+**Gini** measures the likelihood of an incorrect classification of a new instance if it was randomly classified according to the distribution of classes in the dataset. It is calculated as:\
 
-The model effectively captures relationships between earthquake features and alert levels. While promising, further refinement (e.g., pruning or ensemble methods) can improve performance.
+$1 - \sum_{i=1}^{n} (p_i)^2$,\
+
+where $p_i$ is the probability of an instance being classified into a particular class.
+
+**Entropy** measures the amount of uncertainty or impurity in the dataset. It is calculated as:\
+
+$- \sum_{i=1}^{n} p_i \log_2(p_i)$,\
+
+where $p_i$ is the probability of an instance being classified into a particular class.
+
+**Information gain** measures the reduction in entropy or Gini impurity after a dataset is split on an attribute. It is calculated as:\
+
+$\text{Entropy}{\text{parent}} - \sum{i=1}^{n} \frac{|D_i|}{|D|} \cdot \text{Entropy}(D_i)$,\
+
+where $D_i$ is the subset of $D$ after splitting by an attribute.
+
+## Conclusion
+
+In this project, the decision tree model effectively showed the relationships between earthquake features and alert levels. By analyzing the splits in the tree, we can better understand how factors like significance ($sig$) and magnitude contribute to the classification.
